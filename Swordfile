@@ -1,0 +1,32 @@
+:use go
+:use docker
+
+# variables are fun 
+docker_prefix = floatarch/
+docker_tag = $ test -d .git && git rev-parse --short HEAD || echo "UNKNOWN"
+
+# everything after a $ is ran as shell and returned.
+packages_to_build = $ find . -type f -name 'main.go' ! -path './vendor/*' | sed -n 's/^..\([a-z]*\)\/main.go/.\/\1/gp'
+
+# : references a core function
+:job default -> @all
+
+# jobs can either be single line..
+:job all -> @dep @bin
+
+# or scoped by whitespace
+:job dep -> 
+  $ dep ensure
+
+# for iterating over multiple things, it'll take a string similar to bash expects.
+:job bin >> {packages_to_build} -> 
+  go::generate ./{.}/...
+  go::build -o ./{.}/{.} ./{.}
+  
+  name = {docker_prefix}{.}:{docker_tag}
+  docker::build ./{.} -t {name}
+
+  # so how to do ifs?
+  # we can run any sort of thing, expect a bool or exit code
+  # and it'll stop it on a ?? and run everything after. 
+  $ [ DOCKER_PUSH == 1 ] ?? docker::push {name}

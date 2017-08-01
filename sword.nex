@@ -1,0 +1,23 @@
+/#/ <                   { fmt.Println("got comment", txt()) }
+    /[^\n]/             {}
+>                       {}
+/[a-zA-Z0-9_]+/         { fmt.Println("got literal", txt()) }
+/:[a-zA-Z0-0_]+/        { fmt.Println("got function", txt()) }
+/$/                     { fmt.Println("got shell start", txt()) }
+/[^ \t]+/             { fmt.Println("got symbol", txt()) }
+/[ \t]+/              { /* eat up whitespace */ }
+/./                     { fmt.Println("unknown:", txt()) }
+//
+package main
+///#.*/                 { fmt.Println("got comment", txt()) }
+
+import (
+  "os"
+  "fmt"
+)
+
+func main() {
+  lex := NewLexer(os.Stdin)
+  txt := func() string { return lex.Text() }
+  NN_FUN(lex)
+}
